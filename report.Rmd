@@ -1,0 +1,78 @@
+---
+title: "Weather Data Report"
+output:
+  word_document: default
+params: 
+  input: null
+subtitle: "`r params$input$stations`"
+---
+
+```{r setup, include=FALSE}
+
+library(knitr)
+library(flextable)
+library(maps)
+library(mapproj)
+# for (i in c('knitr', 'flextable', 'maps', 'mapproj')) {
+#     if (!require(i, character.only = TRUE)) install.packages(i)
+# }
+
+opts_chunk$set(
+  echo       = FALSE,
+  message    = FALSE,
+  warning    = FALSE
+)
+
+source("util.R")
+
+```
+
+# Variable plot
+
+```{r plot, echo=FALSE}
+
+plot_selection(data, params$input)
+
+```
+
+<br>
+
+## Hutton criteria
+```{r hutton, echo = FALSE, ft.align="left"}
+
+filter_by_input(hutton, input) %>% 
+  format_hutton() %>% 
+  flextable() %>% 
+  width(j = c(1, 2, 3, 4, 5, 6), width = 1) %>% 
+  align(align = "left", part = "all") %>%
+  fontsize(size = 12)
+
+```
+
+<br>
+
+## Site location
+```{r map, echo = FALSE}
+
+ggplot() + 
+  geom_polygon(data = map_data(map = "world", region = "UK"), aes(x = long, y = lat, group = group)) +
+  coord_map() + 
+  geom_point(data = sites_info[sites_info$site_name %in% input$stations,], aes(x = longitude, y = latitude, colour = site_name), size = 3) + 
+  guides(colour = guide_legend(title = "Stations")) + 
+  theme_void()
+
+```
+
+<br>
+
+## Daily mean summary (last week)
+```{r summary, echo = FALSE, ft.align="left"}
+
+summary %>% 
+  filter(site_name %in% input$stations) %>% 
+  format_summary() %>% 
+  flextable() %>% 
+  autofit() %>%
+  align(align = "left", part = "all")
+
+```
